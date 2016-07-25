@@ -2,6 +2,7 @@
 <html>
 
   <head>
+    <title>Google Contacts E164 formatter</title>
     <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="style/style.css">
@@ -17,6 +18,7 @@
             {{data.Message}}
     </div>
     <div id="auth" ng-controller="AuthenticateController as AuthCtrl" ng-hide="data.IsAuthenticated">
+      <h1>Google Contacts E164 check/fix</h1>
         <a ng-href="{{data.OAuthURL}}" target="_blank" class="btn btn-primary btn-lg">
             <i class="fa fa-google"></i> Login to Google Contacts
         </a>
