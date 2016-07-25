@@ -2,33 +2,33 @@ var app = angular.module('contacts', []);
 
 app.service('MessageService', [ function() {
 	this.data = {
-        'Message': '',
-        'MessageClass': '',
-        'ShowMessage': false
-    };
+    'Message': '',
+    'MessageClass': '',
+    'ShowMessage': false
+  };
 
-    this.DisplayMessage = function(message, messagetype) {
+  this.DisplayMessage = function(message, messagetype) {
     	this.data.Message = message;
 
-        switch(messagetype) {
-            case 'error':
-           		this.data.MessageClass = 'alert alert-danger';
-                break;
-			case 'warning':
-                this.data.MessageClass = 'alert alert-warning';
-                break;
-            case 'success':
-                this.data.MessageClass = 'alert alert-success';
-                break;
-            default:
-                this.data.MessageClass = 'alert alert-danger';
-        };
+      switch(messagetype) {
+        case 'error':
+       		this.data.MessageClass = 'alert alert-danger';
+          break;
+				case 'warning':
+          this.data.MessageClass = 'alert alert-warning';
+          break;
+        case 'success':
+          this.data.MessageClass = 'alert alert-success';
+          break;
+        default:
+          this.data.MessageClass = 'alert alert-danger';
+      };
 
-        this.data.ShowMessage = true;
-    };
+      this.data.ShowMessage = true;
+    }
 }]);
 
-app.service('AuthService',['$location', function ($location) {
+app.service('AuthService',[function () {
     this.data = {
         'IsAuthenticated': false,
         'IsCorrectURL': false,
@@ -47,9 +47,9 @@ app.service('AuthService',['$location', function ($location) {
     this.SetOAuthCallbackURL = function() {
         var a = document.createElement('a');
         a.href = document.referrer;
-        this.data.OAuthCallbackURL = ['https://fiddle.jshell.net', a.pathname].join('');
+        this.data.OAuthCallbackURL = [a.protocol, '//', a.host, a.pathname].join('');
         a = '';
-    };
+    }
 
     this.SetOAuthURL = function() {
         // URL Encode parameters
@@ -59,7 +59,7 @@ app.service('AuthService',['$location', function ($location) {
 
         // Set oauth url
         this.data.OAuthURL = this.config.oAuthEndPoint + "?client_id=" + client_id + "&redirect_uri=" + redirect_uri + "&scope=" + scope + "&response_type=token";
-    };
+    }
 
     this.TokenRecieved = function() {
         // Check url for fragments, access_token
@@ -70,7 +70,7 @@ app.service('AuthService',['$location', function ($location) {
             this.data.token_expires = this.GetURLParameter('expires_in');
             this.data.IsAuthenticated = true;
         }
-    };
+    }
 
     this.GetURLParameter = function(sParam) {
 	    var sPageURL = window.parent.location.hash.substring(1);
@@ -84,27 +84,17 @@ app.service('AuthService',['$location', function ($location) {
 		}
 
     this.init = function() {
-    		// Check if it's the correct url
-        if(window.location.href.indexOf('_display') == -1)
-        {
-        	// Correct url
-          this.data.IsCorrectURL = true;
-          // Build secure URL for this JSFiddle
+    		  // Build secure URL for this JSFiddle
         	this.SetOAuthCallbackURL();
-        	// Check for correct protocol
-        	if($location.protocol() == 'https') {
-            // Set secure connection
-            this.data.IsSecureURL = true;
-            // Check for token
-            if(!this.TokenRecieved())
-            {
-                // Build oauth url
-                this.SetOAuthURL();
-            }
-					}
-        }
+        	// Check for token
+          if(!this.TokenRecieved())
+          {
+          	// Build oauth url
+            this.SetOAuthURL();
+          }
     }
-    this.init();
+
+		this.init();
 }]);
 
 app.service('ContactsService',['AuthService', 'MessageService', '$http', function (AuthService, MessageService, $http) {
@@ -117,58 +107,58 @@ app.service('ContactsService',['AuthService', 'MessageService', '$http', functio
     };
 
     this.LoadContacts = function() {
-        $http({
-  			method: 'GET',
-  			url: 'https://www.googleapis.com/m8/feeds/contacts/default/full/?max-results=9999&alt=json',
-            headers: {
-                'Authorization': 'Bearer ' + AuthService.data.access_token,
-                'GData-Version': '3.0'
-            }
-		}).then(function successCallback(response) {
+      $http({
+				method: 'GET',
+				url: 'https://www.googleapis.com/m8/feeds/contacts/default/full/?max-results=9999&alt=json',
+		      headers: {
+		      	'Authorization': 'Bearer ' + AuthService.data.access_token,
+		        'GData-Version': '3.0'
+		      }
+			}).then(function successCallback(response) {
     		// this callback will be called asynchronously
     		// when the response is available
-            angular.copy(this.CrunchTheNumbers(response.data.feed), this.data.ContactsFeed);
+        angular.copy(this.CrunchTheNumbers(response.data.feed), this.data.ContactsFeed);
   		}.bind(this), function errorCallback(response) {
     		// Set error message
-            MessageService.DisplayMessage(
-                'An error occured while trying to fetch the contacts from Google! ' +
-                'Error: ' + response.data.error.code + ' - ' + response.data.error.message, 'error');
-            // Show logon button again
-            AuthService.data.IsAuthenticated = false;
+        MessageService.DisplayMessage(
+          'An error occured while trying to fetch the contacts from Google! ' +
+          'Error: ' + response.data.error.code + ' - ' + response.data.error.message, 'error');
+          // Show logon button again
+          AuthService.data.IsAuthenticated = false;
   		}.bind(this));
-    };
+    }
 
     this.CrunchTheNumbers = function(inpFeed) {
     	// Loop the feed
-        for (i = 0; i < inpFeed.entry.length; i++)
-        {
-            // Check for null value
-            if(inpFeed.entry[i].gd$phoneNumber == undefined) { continue; };
+      for (i = 0; i < inpFeed.entry.length; i++)
+      {
+        // Check for null value
+        if(inpFeed.entry[i].gd$phoneNumber != undefined) {
+	        // Check all numbers
+	        inpFeed.entry[i].IsAllNumbersValid = this.IsAllNumbersValid(inpFeed.entry[i].gd$phoneNumber);
 
-            // Check all numbers
-            inpFeed.entry[i].IsAllNumbersValid = this.IsAllNumbersValid(inpFeed.entry[i].gd$phoneNumber);
+	        // Add statistics
+	        if(inpFeed.entry[i].IsAllNumbersValid)
+	        {
+	             this.data.NumberOfValidContacts += 1;
+	        }
+	        else
+	        {
+	             this.data.NumberOfInValidContacts += 1;
+	        }
+				}
+      }
 
-            // Add statistics
-            if(inpFeed.entry[i].IsAllNumbersValid)
-            {
-                 this.data.NumberOfValidContacts += 1;
-            }
-            else
-            {
-                 this.data.NumberOfInValidContacts += 1;
-            }
-        }
+      // Calculate the default country
+      // Sort sontries from the one with most numbers -> least numbers
+      var countryTopList = Object.keys(this.data.DefaultCountryStats).sort(function(a,b){
+          return this.data.DefaultCountryStats[b]-this.data.DefaultCountryStats[a]}.bind(this));
 
-        // Calculate the default country
-        // Sort sontries from the one with most numbers -> least numbers
-        var countryTopList = Object.keys(this.data.DefaultCountryStats).sort(function(a,b){
-            return this.data.DefaultCountryStats[b]-this.data.DefaultCountryStats[a]}.bind(this));
-
-        // Set the default country
-        this.data.DefaultCountry = countryTopList[0];
-        // Generate valid numbers
-        inpFeed = this.GenerateValidNumbers(inpFeed);
-        return inpFeed;
+      // Set the default country
+      this.data.DefaultCountry = countryTopList[0];
+      // Generate valid numbers
+      inpFeed = this.GenerateValidNumbers(inpFeed);
+      return inpFeed;
     }
 
     this.IsAllNumbersValid = function(phoneArray) {
@@ -186,6 +176,7 @@ app.service('ContactsService',['AuthService', 'MessageService', '$http', functio
                 // Valid number
                 var con = countryForE164Number(phoneArray[j].$t);
 
+								// Add to country statistics
                 if(this.data.DefaultCountryStats[con] != undefined)
                 {
                     this.data.DefaultCountryStats[con] += 1;
@@ -197,7 +188,7 @@ app.service('ContactsService',['AuthService', 'MessageService', '$http', functio
             }
         }
         return retval;
-    };
+    }
 
     this.GenerateValidNumbers = function(inpFeed) {
     	for (k = 0; k < inpFeed.entry.length; k++)
@@ -209,7 +200,7 @@ app.service('ContactsService',['AuthService', 'MessageService', '$http', functio
         }
 
         return inpFeed;
-    };
+    }
 
     this.GenerateE164 = function(phoneArray) {
         var retval = [];
@@ -231,46 +222,109 @@ app.service('ContactsService',['AuthService', 'MessageService', '$http', functio
             }
         }
         return retval;
-    };
+    }
 
     this.ChangeDefaultCountry = function() {
     	this.data.ContactsFeed = this.GenerateValidNumbers(this.data.ContactsFeed);
-    };
+    }
 
     this.UpdateContacts = function() {
-    	// Get the xml
-		$http({
-            method: 'GET',
-            url: 'https://www.googleapis.com/m8/feeds/contacts/default/full/?max-results=9999',
-            headers: {
-                'Authorization': 'Bearer ' + AuthService.data.access_token,
-                'GData-Version': '3.0'
-            }
-        }).then(function successCallback(response) {
-            // this callback will be called asynchronously
-            // when the response is available
-            // Parse the xml
-            var xmlContacts = $.parseXML(response.data);
-            console.log(xmlContacts);
-            $xml = $(xmlContacts);
-            // Loop the contacts
-            for (i = 0; i < this.data.ContactsFeed.entry.length; i++)
-            {
-                console.log($xml.find("id:contains('" + this.data.ContactsFeed.entry[i].id.$t + "')").parent().tostring());
-            }
+			// Loop contacts
+			for (i = 0; i < this.data.ContactsFeed.entry.length; i++)
+			{
+					// Check if it's selected
+					if(this.data.ContactsFeed.entry[i].IsSelected) {
+						// Get id
+						var contactID = this.data.ContactsFeed.entry[i].id.$t.substr(this.data.ContactsFeed.entry[i].id.$t.lastIndexOf('/') + 1);
 
-        }.bind(this), function errorCallback(response) {
-            // Set error message
-            console.log(response);
-            // Show logon button again
+						// Get the xml
+						$http({
+						  method: 'GET',
+						  url: 'https://www.googleapis.com/m8/feeds/contacts/default/full/' + contactID,
+						  headers: {
+						      'Authorization': 'Bearer ' + AuthService.data.access_token,
+						      'GData-Version': '3.0'
+						  }
+						 }).then(function successCallback(response) {
+							  // this callback will be called asynchronously
+							  // when the response is available
+							  // Parse the xml
+							  var xmlContact = $.parseXML(response.data);
+								// Local variables needed inside the jquery each
+								var country = this.data.DefaultCountry;
 
-        }.bind(this));
-    };
+								// Change all the phone numbers
+								$(xmlContact).find("phoneNumber").each(function () {
+									// Get phone number
+									var phoneNbr = $(this).text();
+									phoneNbr = formatE164(country, phoneNbr);
+									// Save it
+									$(this).text(phoneNbr);
+								})
 
-    if(AuthService.data.IsAuthenticated == true)
-    {
-        // Load contacts
-        this.LoadContacts();
+								// Save to server
+								this.UpdateContact(xmlContact);
+							}.bind(this), function errorCallback(response) {
+							  // Set error message
+							  console.log(response);
+							}.bind(this));
+					}
+			}
+    }
+
+		this.UpdateContact = function(contact) {
+			var etag = $(contact).find("entry").attr('gd:etag'); // Get the etag
+			var xml = (new XMLSerializer()).serializeToString(contact); // Serialize update back to xml
+
+			var contactID = $(contact).find("id").text();
+			contactID = contactID.substr(contactID.lastIndexOf('/') + 1);
+
+			$http({
+				method: 'PUT',
+				url: 'https://www.googleapis.com/m8/feeds/contacts/default/full/' + contactID + '?alt=json',
+				headers: {
+						'Authorization': 'Bearer ' + AuthService.data.access_token,
+						'GData-Version': '3.0',
+						'If-Match': etag,
+						'Content-Type': 'application/atom+xml'
+					},
+				data: xml
+				}).then(function successCallback(response) {
+					// Check that we got an entry back
+					if(response.data.entry != undefined) {
+						var entry = response.data.entry;
+						// Create the valid numnber column
+						entry.validNumbers = this.GenerateE164(entry.gd$phoneNumber);
+						// Check it
+						entry.IsAllNumbersValid = this.IsAllNumbersValid(entry.gd$phoneNumber);
+						// Update count
+						this.data.NumberOfValidContacts += 1;
+						this.data.NumberOfInValidContacts -= 1;
+						// Add it to the list
+						for (var i = 0; i < this.data.ContactsFeed.entry.length; i++) {
+							if(this.data.ContactsFeed.entry[i].id.$t == entry.id.$t)
+								this.data.ContactsFeed.entry[i] = entry;
+						}
+					}
+				}.bind(this), function errorCallback(response) {
+					// Set error message
+					console.log(response);
+				}.bind(this));
+		}
+
+		this.ChangeSelection = function(val) {
+			for (i = 0; i < this.data.ContactsFeed.entry.length; i++)
+      {
+				if(!this.data.ContactsFeed.entry[i].IsAllNumbersValid)
+				{
+					this.data.ContactsFeed.entry[i].IsSelected = val;
+				}
+			}
+		}
+
+    if(AuthService.data.IsAuthenticated == true) {
+      // Load contacts
+      this.LoadContacts();
     }
 }]);
 
@@ -289,12 +343,23 @@ app.controller("AuthenticateController", ['$scope', 'AuthService', function ($sc
 app.controller("ContactsController", ['$scope', '$http', 'AuthService', 'ContactsService', function ($scope, $http, AuthService, ContactsService) {
     $scope.Auth = AuthService.data;
     $scope.Contacts = ContactsService.data;
+		$scope.IsAllSelected = false;
 
     $scope.DeafultCountryChange = function() {
         ContactsService.ChangeDefaultCountry();
-    };
+    }
 
     $scope.UpdateContacts = function() {
     	ContactsService.UpdateContacts();
-    };
+    }
+
+		$scope.SelectAll = function() {
+				if($scope.IsAllSelected) {
+					$scope.IsAllSelected = false;
+				} else {
+					$scope.IsAllSelected = true;
+				}
+
+				ContactsService.ChangeSelection($scope.IsAllSelected);
+		}
 }]);

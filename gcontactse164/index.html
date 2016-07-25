@@ -2,7 +2,12 @@
 <html>
 
   <head>
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
     <link rel="style/stylesheet" href="style.css">
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.1/angular.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="js/phoneformat.js"></script>
     <script src="js/script.js"></script>
   </head>
 
@@ -12,17 +17,9 @@
             {{data.Message}}
     </div>
     <div id="auth" ng-controller="AuthenticateController as AuthCtrl" ng-hide="data.IsAuthenticated">
-        <a ng-href="{{data.OAuthURL}}" target="_blank" class="btn btn-primary btn-lg" ng-show="data.IsSecureURL">
+        <a ng-href="{{data.OAuthURL}}" target="_blank" class="btn btn-primary btn-lg">
             <i class="fa fa-google"></i> Login to Google Contacts
         </a>
-        <a ng-href="https://fiddle.jshell.net/kallsbo/1qw2fdzk/" target="_blank" class="btn btn-danger btn-lg" ng-hide="data.IsCorrectURL">
-            <i class="fa fa-exclamation-triangle"></i> Switch to correct URL
-        </a>
-        <p class="text-danger" ng-hide="data.IsCorrectURL">Cross site loading prevents jsfiddle.net url to be used.</p>
-        <a ng-href="{{data.OAuthCallbackURL}}" target="_blank" class="btn btn-danger btn-lg" ng-hide="HideHTTPSSwitch()">
-            <i class="fa fa-exclamation-triangle"></i> Switch to HTTPS
-        </a>
-        <p class="text-danger" ng-hide="HideHTTPSSwitch()">Token response from Google can be handled over HTTP but is a security issue so please switch to HTTPS!</p>
     </div>
 
     <div id="contacts" ng-controller="ContactsController as ContactsCtrl" ng-show="Auth.IsAuthenticated">
@@ -280,12 +277,14 @@
         </div>
         <table class="table table-striped" ng-hide="error.code != null">
             <tr>
+                <th><input type="checkbox" ng-model="IsAllSelected" ng-click="SelectAll()"</th>
                 <th>Name</th>
                 <th>Phone #</th>
 	            <th>E.164 #</th>
                 <th>Updated</th>
             </tr>
             <tr ng-class="{false:'danger'}[contact.IsAllNumbersValid]" ng-repeat="contact in Contacts.ContactsFeed.entry | filter:{gd$phoneNumber:'!!'} track by contact.id.$t">
+                <td><input type="checkbox" ng-model="contact.IsSelected" ng-disabled="contact.IsAllNumbersValid"></td>
                 <td>{{contact.title.$t}}</td>
                 <td>
                     <span ng-repeat="number in contact.gd$phoneNumber">
